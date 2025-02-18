@@ -10,6 +10,8 @@ USE WAREHOUSE HOL_WH;
 USE DATABASE HOL_DB;
 
 
+
+
 -- ----------------------------------------------------------------------------
 -- Step #1: Add new/remaining order data
 -- ----------------------------------------------------------------------------
@@ -17,6 +19,9 @@ USE DATABASE HOL_DB;
 USE SCHEMA RAW_POS;
 
 ALTER WAREHOUSE HOL_WH SET WAREHOUSE_SIZE = XLARGE WAIT_FOR_COMPLETION = TRUE;
+
+
+
 
 COPY INTO ORDER_HEADER
 FROM @external.frostbyte_raw_stage/pos/order_header/year=2022
@@ -41,6 +46,19 @@ ALTER WAREHOUSE HOL_WH SET WAREHOUSE_SIZE = XSMALL;
 USE SCHEMA HARMONIZED;
 
 EXECUTE TASK ORDERS_UPDATE_TASK;
+
+SELECT *
+FROM TABLE(INFORMATION_SCHEMA.TASK_HISTORY(
+    SCHEDULED_TIME_RANGE_START=>DATEADD('DAY',-1,CURRENT_TIMESTAMP()),
+    RESULT_LIMIT => 100))
+ORDER BY SCHEDULED_TIME DESC
+;
+
+SELECT *
+FROM TABLE(INFORMATION_SCHEMA.QUERY_HISTORY(
+    DATEADD('HOURS',-1,CURRENT_TIMESTAMP()),CURRENT_TIMESTAMP()))
+ORDER BY START_TIME DESC
+LIMIT 100;
 
 
 -- ----------------------------------------------------------------------------
